@@ -21,7 +21,7 @@ namespace CWAutosplitter.Memory
 
         public static bool IsGameRunning()
         {
-            string Result = Encoding.ASCII.GetString(RequestMemory(0xC14619C8, 8));
+            string Result = Encoding.ASCII.GetString(RequestMemory(0xC201F3DF, 8));
             if (Result == TitleID)
             {
                 return true;
@@ -38,9 +38,9 @@ namespace CWAutosplitter.Memory
             /// Check if inputted IP is actually a valid IP and someone didn't just accidentally hit set
             if (!ParseIP(IP)) return new byte[length];
             var tcp = new TcpClient();
-            if (!tcp.Client.ConnectAsync(IP, 730).Wait(200))
+            if (!tcp.Client.ConnectAsync(IP, 730).Wait(1000))
             {
-                /// Wait 200 milliseconds to connect to the Xbox if it doesn't IP probably isn't valid so close the connection and return nothing
+                /// Wait 1 second to connect to the Xbox if it doesn't IP probably isn't valid so close the connection and return nothing
                 /// If you continue to try to spam TCP requests to a client that doesn't exist Livesplit will hang
                 IP = "";
                 tcp.Close();
