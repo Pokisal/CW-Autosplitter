@@ -17,8 +17,6 @@ namespace CWAutosplitter.UI.Components
 {
     public partial class CWAutosplitter : LiveSplit.UI.Components.IComponent
     {
-
-        public byte[] TitleID = new byte[4] { 0, 0, 0, 0 };
         public byte[] CutsceneID = new byte[4] { 0, 0, 0, 0 };
         public bool InLoad;
         public bool InCutscene;
@@ -86,7 +84,6 @@ namespace CWAutosplitter.UI.Components
         {
             if (CutsceneIDString == "800_" && OldCutsceneIDString != "800_")
             {
-                Splits.Clear();
                 return true;
             }
             return false;
@@ -94,6 +91,7 @@ namespace CWAutosplitter.UI.Components
 
         public void OnReset()
         {
+            Splits.Clear();
         }
 
         public bool Split()
