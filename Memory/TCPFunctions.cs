@@ -22,11 +22,7 @@ namespace CWAutosplitter.Memory
         public static bool IsGameRunning()
         {
             string Result = Encoding.ASCII.GetString(RequestMemory(0xC201F3DF, 8));
-            if (Result == TitleID)
-            {
-                return true;
-            }
-            return false;
+            return Result == TitleID;
         }
         public static bool ParseIP(string input)
         {
@@ -38,6 +34,8 @@ namespace CWAutosplitter.Memory
             /// Check if inputted IP is actually a valid IP and someone didn't just accidentally hit set
             if (!ParseIP(IP)) return new byte[length];
             var tcp = new TcpClient();
+            tcp.ReceiveTimeout = 1000;
+            tcp.SendTimeout = 1000;
             if (!tcp.Client.ConnectAsync(IP, 730).Wait(1000))
             {
                 /// Wait 1 second to connect to the Xbox if it doesn't IP probably isn't valid so close the connection and return nothing
@@ -56,9 +54,9 @@ namespace CWAutosplitter.Memory
             tcp.Client.Receive(response2);
             /// First two bytes are header data that needs to be discarded
             byte[] data = new byte[length];
-            byte[] data2 = new byte[length + 2];
-            tcp.Client.Receive(data2);
-            Array.Copy(data2, 2, data, 0, length);
+            byte[] buffer = new byte[length + 2];
+            tcp.Client.Receive(buffer);
+            Array.Copy(buffer, 2, data, 0, length);
             tcp.Close();
             return data;
         }
