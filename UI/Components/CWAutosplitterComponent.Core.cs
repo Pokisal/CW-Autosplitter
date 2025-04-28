@@ -45,7 +45,20 @@ namespace CWAutosplitter.UI.Components
 
         private void UpdateMemory(object sender, ElapsedEventArgs e)
         {
+            /// Have to do this dog shit to avoid a race condition and prevent LiveSplit from lagging like a bitch
             Update();
+            if (Timer.CurrentState.CurrentPhase == TimerPhase.Running)
+            {
+                Timer.CurrentState.IsGameTimePaused = IsLoading();
+                Timer.CurrentState.SetGameTime(GameTime());
+                if (Settings.Reset && Reset()) Timer.Reset();
+                else if (Settings.Split && Split()) Timer.Split();
+            }
+            else if (Settings.Start && Start())
+            {
+                Timer.CurrentState.IsGameTimePaused = true;
+                Timer.Start();
+            }
         }
 
         public CWAutosplitter(LiveSplitState state)
@@ -89,18 +102,7 @@ namespace CWAutosplitter.UI.Components
 
         public void Update(IInvalidator invalidator, LiveSplitState state, float width, float height, LayoutMode mode)
         {
-            if (Timer.CurrentState.CurrentPhase == TimerPhase.Running)
-            {
-                Timer.CurrentState.IsGameTimePaused = IsLoading();
-                Timer.CurrentState.SetGameTime(GameTime());
-                if (Settings.Reset && Reset()) Timer.Reset();
-                else if (Settings.Split && Split()) Timer.Split();
-            }
-            if (Settings.Start && Start())
-            {
-                Timer.CurrentState.IsGameTimePaused = true;
-                Timer.Start();
-            }
+            /// LiveSplit is expecting this and I don't know how to remove it ngl.
         }
     }
 }
