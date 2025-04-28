@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Windows.Forms;
+using System.Timers;
 
 namespace CWAutosplitter.UI.Components
 {
@@ -36,24 +37,33 @@ namespace CWAutosplitter.UI.Components
         public LiveSplitState State { get; set; }
         public TimerModel Timer { get; set; }
 
+        System.Timers.Timer UpdateTimer = new System.Timers.Timer(33);
+
         public EventHandler StartEvent => (sender, e) => { OnStart(); };
         public EventHandlerT<TimerPhase> ResetEvent => (sender, e) => { OnReset(); };
         public EventHandler SplitEvent => (sender, e) => { OnSplit(); };
 
+        private void UpdateMemory(object sender, ElapsedEventArgs e)
+        {
+            Update();
+        }
+
         public CWAutosplitter(LiveSplitState state)
         {
+            UpdateTimer.AutoReset = true;
+            UpdateTimer.Elapsed += new ElapsedEventHandler(UpdateMemory);
             State = state;
             Timer = new TimerModel() { CurrentState = state };
             Settings = new AutosplitterSettings();
             State.OnStart += StartEvent;
             State.OnReset += ResetEvent;
             Timer.OnSplit += SplitEvent;
-            Startup();
+            UpdateTimer.Start();
         }
 
         public void Dispose()
         {
-            Shutdown();
+            UpdateTimer.Stop();
             State.OnStart -= StartEvent;
             State.OnReset -= ResetEvent;
             Timer.OnSplit -= SplitEvent;
@@ -79,8 +89,6 @@ namespace CWAutosplitter.UI.Components
 
         public void Update(IInvalidator invalidator, LiveSplitState state, float width, float height, LayoutMode mode)
         {
-            if (!TCPFunctions.IsGameRunning()) return;
-            if (!Update()) return;
             if (Timer.CurrentState.CurrentPhase == TimerPhase.Running)
             {
                 Timer.CurrentState.IsGameTimePaused = IsLoading();
@@ -88,7 +96,7 @@ namespace CWAutosplitter.UI.Components
                 if (Settings.Reset && Reset()) Timer.Reset();
                 else if (Settings.Split && Split()) Timer.Split();
             }
-            else if (Settings.Start && Start())
+            if (Settings.Start && Start())
             {
                 Timer.CurrentState.IsGameTimePaused = true;
                 Timer.Start();

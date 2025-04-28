@@ -43,14 +43,13 @@ namespace CWAutosplitter.UI.Components
         {
         }
 
-        public bool Update()
+        public void Update()
         {
             OldCutsceneIDString = CutsceneIDString;
             CutsceneID = TCPFunctions.RequestMemory(0xC809393C, 4);
             InLoad = TCPFunctions.RequestMemory(0xC8093A38, 1).ElementAt(0) != 0;
             InCutscene = TCPFunctions.RequestMemory(0xC837336C, 1).ElementAt(0) != 0;
             CutsceneIDString = Encoding.UTF8.GetString(CutsceneID);
-            return true;
         }
 
         public bool Start()
@@ -82,7 +81,7 @@ namespace CWAutosplitter.UI.Components
 
         public bool Reset()
         {
-            if (CutsceneIDString == "800_" && OldCutsceneIDString != "800_")
+            if ((CutsceneIDString == "800_" && OldCutsceneIDString != "800_") || (CutsceneIDString == "800a" && OldCutsceneIDString != "800a"))
             {
                 return true;
             }
