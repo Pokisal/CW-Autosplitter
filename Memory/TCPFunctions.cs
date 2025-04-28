@@ -31,34 +31,33 @@ namespace CWAutosplitter.Memory
         }
         public static byte[] RequestMemory(uint address, uint length)
         {
-            /// Check if inputted IP is actually a valid IP and someone didn't just accidentally hit set
-            if (!ParseIP(IP)) return new byte[length];
-            var tcp = new TcpClient();
-            tcp.ReceiveTimeout = 1000;
-            tcp.SendTimeout = 1000;
-            if (!tcp.Client.ConnectAsync(IP, 730).Wait(1000))
+            try
             {
-                /// Wait 1 second to connect to the Xbox if it doesn't IP probably isn't valid so close the connection and return nothing
-                /// If you continue to try to spam TCP requests to a client that doesn't exist Livesplit will hang
-                IP = "";
+                if (!ParseIP(IP)) return new byte[length];
+                var tcp = new TcpClient();
+                tcp.ReceiveTimeout = 1000;
+                tcp.SendTimeout = 1000;
+                if (!tcp.Client.ConnectAsync(IP, 730).Wait(1000))
+                {
+                    tcp.Close();
+                    return new byte[length];
+                }
+                var response1 = new byte[1024];
+                var response2 = new byte[1024];
+                tcp.Client.Receive(response1);
+                tcp.Client.Send(Encoding.ASCII.GetBytes(string.Format("GETMEMEX ADDR={0} LENGTH={1}\r\n", address, 1024)));
+                tcp.Client.Receive(response2);
+                byte[] data = new byte[length];
+                byte[] data2 = new byte[length + 2];
+                tcp.Client.Receive(data2);
+                Array.Copy(data2, 2, data, 0, length);
                 tcp.Close();
+                return data;
+            }
+            catch (SocketException)
+            {
                 return new byte[length];
             }
-            /// Requires 2 requests of 1024 bytes to clear that a successful connection has been established
-            var response1 = new byte[1024];
-            var response2 = new byte[1024];
-            tcp.Client.Receive(response1);
-            /// Requires a read of an entire memory chunk regardless if that's what you ask for and only doing it from Livesplit seems to have this issue for some reason
-            /// You can even just request a full memory chunk but not receive it and it doesn't care
-            tcp.Client.Send(Encoding.ASCII.GetBytes(string.Format("GETMEMEX ADDR={0} LENGTH={1}\r\n", address, 1024)));
-            tcp.Client.Receive(response2);
-            /// First two bytes are header data that needs to be discarded
-            byte[] data = new byte[length];
-            byte[] buffer = new byte[length + 2];
-            tcp.Client.Receive(buffer);
-            Array.Copy(buffer, 2, data, 0, length);
-            tcp.Close();
-            return data;
         }
     }
 }
