@@ -37,7 +37,7 @@ namespace CWAutosplitter.UI.Components
         public LiveSplitState State { get; set; }
         public TimerModel Timer { get; set; }
 
-        System.Timers.Timer UpdateTimer = new System.Timers.Timer(33);
+        System.Timers.Timer UpdateTimer = new System.Timers.Timer(33.333333333333);
 
         public EventHandler StartEvent => (sender, e) => { OnStart(); };
         public EventHandlerT<TimerPhase> ResetEvent => (sender, e) => { OnReset(); };
