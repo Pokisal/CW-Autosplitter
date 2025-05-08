@@ -28,48 +28,48 @@ namespace CWAutosplitter.Memory
             IPAddress address;
             return IPAddress.TryParse(input, out address) && address.ToString() == input;
         }
-        public static byte[] RequestMemory(uint address, uint baselength, dynamic variable)
+        public static byte[] RequestMemory(uint Address, uint BaseLength, dynamic OldValue)
         {
             try
             {
-                if (!ParseIP(AutosplitterSettings.SavedIP)) return new byte[baselength];
-                uint divisions = baselength / 1024;
-                uint remainder = baselength % 1024;
-                byte[] data = new byte[baselength];
-                for (uint i = 0; i <= divisions; ++i)
+                if (!ParseIP(AutosplitterSettings.SavedIP)) return new byte[BaseLength];
+                uint Chunks = BaseLength / 1024;
+                uint Remainder = BaseLength % 1024;
+                byte[] Data = new byte[BaseLength];
+                for (uint i = 0; i <= Chunks; ++i)
                 {
-                    uint length;
+                    uint Length;
                     var tcp = new TcpClient();
                     tcp.ReceiveTimeout = 1000;
                     tcp.SendTimeout = 1000;
                     if (!tcp.Client.ConnectAsync(AutosplitterSettings.SavedIP, 730).Wait(1000))
                     {
                         tcp.Close();
-                        return variable;
+                        return OldValue;
                     }
-                    if (i == divisions)
+                    if (i == Chunks)
                     {
-                        length = remainder;
+                        Length = Remainder;
                     }
                     else
                     {
-                        length = 1024;
+                        Length = 1024;
                     }
-                    var response1 = new byte[1024];
-                    var response2 = new byte[1024];
-                    tcp.Client.Receive(response1);
-                    tcp.Client.Send(Encoding.ASCII.GetBytes(string.Format("GETMEMEX ADDR={0} LENGTH={1}\r\n", address + (0x400 * i), 1024)));
-                    tcp.Client.Receive(response2);
-                    byte[] data2 = new byte[length + 2];
-                    tcp.Client.Receive(data2);
-                    Array.Copy(data2, 2, data, 0 + (1024 * i), length);
+                    var ConnectionStatusResponse = new byte[1024];
+                    tcp.Client.Receive(ConnectionStatusResponse);
+                    tcp.Client.Send(Encoding.ASCII.GetBytes(string.Format("GETMEMEX ADDR={0} LENGTH={1}\r\n", Address + (0x400 * i), 1024)));
+                    var MemoryStatusResponse = new byte[1024];
+                    tcp.Client.Receive(MemoryStatusResponse);
+                    byte[] Buffer = new byte[Length + 2];
+                    tcp.Client.Receive(Buffer);
+                    Array.Copy(Buffer, 2, Data, 0 + (1024 * i), Length);
                     tcp.Close();
                 }
-                return data;
+                return Data;
             }
             catch (SocketException)
             {
-                return variable;
+                return OldValue;
             }
         }
     }
