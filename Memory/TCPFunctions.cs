@@ -16,13 +16,6 @@ namespace CWAutosplitter.Memory
 {
     public class TCPFunctions
     {
-        public static string TitleID = "58410B00";
-
-        public static bool IsGameRunning()
-        {
-            string Result = Encoding.ASCII.GetString(RequestMemory(0xC201F3DF, 8, (string)default));
-            return Result == TitleID;
-        }
         public static bool ParseIP(string input)
         {
             IPAddress address;
@@ -67,8 +60,9 @@ namespace CWAutosplitter.Memory
                 }
                 return Data;
             }
-            catch (SocketException)
+            catch (SocketException err)
             {
+                Utility.Log("Socket Exception: " + err + " occured");
                 return OldValue;
             }
         }
