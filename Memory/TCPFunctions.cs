@@ -59,9 +59,9 @@ namespace CWAutosplitter.Memory
                 }
                 return Data;
             }
-            catch (SocketException err)
+            catch (Exception err)
             {
-                Utility.Log("Socket Exception: " + err + " occured");
+                Utility.Log("Exception: " + err + " occured");
                 return OldValue;
             }
         }
