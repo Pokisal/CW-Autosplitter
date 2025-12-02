@@ -37,7 +37,6 @@ namespace CWAutosplitter.Memory
                     tcp.SendTimeout = 1000;
                     if (!tcp.Client.ConnectAsync(AutosplitterSettings.SavedIP, 730).Wait(1000))
                     {
-                        tcp.Close();
                         return OldValue;
                     }
                     if (i == Chunks)
