@@ -4,20 +4,25 @@ using LiveSplit.Model.Input;
 using LiveSplit.UI;
 using System;
 using System.Collections.Generic;
-using System.Net.Sockets;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
+using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
-using System.Xml;
-using System.Windows.Forms;
 using System.Timers;
+using System.Windows.Forms;
+using System.Xml;
 
 namespace CWAutosplitter.UI.Components
 {
     public partial class CWAutosplitter : LiveSplit.UI.Components.IComponent
     {
         public string ComponentName => "CW Autosplitter";
+
+        public bool UpdateStarted = true;
+        public Thread UpdateThread = null;
 
         public float HorizontalWidth => 0;
         public float MinimumHeight => 0;
@@ -37,47 +42,55 @@ namespace CWAutosplitter.UI.Components
         public LiveSplitState State { get; set; }
         public TimerModel Timer { get; set; }
 
-        System.Timers.Timer UpdateTimer = new System.Timers.Timer(33.333333333333);
-
         public EventHandler StartEvent => (sender, e) => { OnStart(); };
         public EventHandlerT<TimerPhase> ResetEvent => (sender, e) => { OnReset(); };
         public EventHandler SplitEvent => (sender, e) => { OnSplit(); };
 
-        private void UpdateMemory(object sender, ElapsedEventArgs e)
+        private void UpdateMemory()
         {
-            if (!Update()) return;
-            if (Timer.CurrentState.CurrentPhase == TimerPhase.Running)
+            while (UpdateStarted)
             {
-                Timer.CurrentState.IsGameTimePaused = IsLoading();
-                Timer.CurrentState.SetGameTime(GameTime());
-                if (Settings.Reset && Reset()) Timer.Reset();
-                else if (Settings.Split && Split()) Timer.Split();
-            }
-            else if (Settings.Start && Start())
-            {
-                Timer.CurrentState.IsGameTimePaused = IsLoading();
-                Timer.Start();
+                var watch = Stopwatch.StartNew();
+                Update();
+                if (Timer.CurrentState.CurrentPhase == TimerPhase.Running)
+                {
+                    Timer.CurrentState.IsGameTimePaused = IsLoading();
+                    Timer.CurrentState.SetGameTime(GameTime());
+                    if (Settings.Reset && Reset()) Timer.Reset();
+                    else if (Settings.Split && Split()) Timer.Split();
+                }
+                else if (Settings.Start && Start())
+                {
+                    Timer.CurrentState.IsGameTimePaused = IsLoading();
+                    Timer.Start();
+                }
+                watch.Stop();
+                if (watch.ElapsedMilliseconds < 16)
+                {
+                    Thread.Sleep(16 - (int)watch.ElapsedMilliseconds);
+                }
             }
         }
 
         public CWAutosplitter(LiveSplitState state)
         {
-            UpdateTimer.AutoReset = true;
-            UpdateTimer.Elapsed += new ElapsedEventHandler(UpdateMemory);
+            UpdateStarted = true;
             State = state;
             Timer = new TimerModel() { CurrentState = state };
             Settings = new AutosplitterSettings();
             State.OnStart += StartEvent;
             State.OnReset += ResetEvent;
             Timer.OnSplit += SplitEvent;
-            UpdateTimer.Start();
+            if (UpdateThread == null)
+            {
+                UpdateThread = new Thread(UpdateMemory);
+                UpdateThread.Start();
+            }
         }
 
         public void Dispose()
         {
-            UpdateTimer.Stop();
-            UpdateTimer.AutoReset = false;
-            UpdateTimer.Elapsed -=  new ElapsedEventHandler(UpdateMemory);
+            UpdateStarted = false;
             State.OnStart -= StartEvent;
             State.OnReset -= ResetEvent;
             Timer.OnSplit -= SplitEvent;
