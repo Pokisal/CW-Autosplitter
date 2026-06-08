@@ -45,6 +45,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Memory\ProcessMemory.cs" />
     <Compile Include="Memory\TCPFunctions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="UI\Components\CWAutosplitterComponent.ASLFunctions.cs" />
