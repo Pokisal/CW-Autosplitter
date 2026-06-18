@@ -47,6 +47,15 @@ namespace CWAutosplitter.UI.Components
         {
         }
 
+        public IntPtr GetIntPtr(long input)
+        {
+            if (input >= 0xC0000000)
+            {
+                input += 0x4E000;
+            }
+            return (IntPtr)(0x200000000 + input);
+        }
+
         public void StartProcessActions()
         {
             if (GameMemory != null && !GameMemory.CheckProcess())
@@ -85,13 +94,12 @@ namespace CWAutosplitter.UI.Components
             }
             else
             {
-                /// Xenia RAM starts at 0x200000000, then emulated game ram is offset by 0x4E000
                 StartProcessActions();
                 try
                 {
-                    CutsceneIDString = GameMemory.ReadStringAscii((IntPtr)(0x200000000 + 0x4E000 + 0xC809393C), 4);
-                    InLoad = GameMemory.ReadByte((IntPtr)(0x200000000 + 0x4E000 + 0xC8093A38)) != 0;
-                    InCutscene = GameMemory.ReadByte((IntPtr)(0x200000000 + 0x4E000 + 0xC837336C)) != 0;
+                    CutsceneIDString = GameMemory.ReadStringAscii(GetIntPtr(0xC809393C), 4);
+                    InLoad = GameMemory.ReadByte(GetIntPtr(0xC8093A38)) != 0;
+                    InCutscene = GameMemory.ReadByte(GetIntPtr(0xC837336C)) != 0;
                 }
                 catch (NullReferenceException)
                 {
