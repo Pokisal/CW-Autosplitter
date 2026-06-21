@@ -21,6 +21,8 @@ namespace CWAutosplitter.UI.Components
         private static ProcessMemory GameMemory;
         private static Process GameProcess;
 
+        public long RamBase = 0x200000000;
+
         public byte[] CutsceneID = new byte[4] { 0, 0, 0, 0 };
         public bool InLoad;
         public bool InCutscene;
@@ -53,7 +55,7 @@ namespace CWAutosplitter.UI.Components
             {
                 input += 0x4E000;
             }
-            return (IntPtr)(0x200000000 + input);
+            return (IntPtr)(RamBase + input);
         }
 
         public void StartProcessActions()
@@ -97,6 +99,13 @@ namespace CWAutosplitter.UI.Components
                 StartProcessActions();
                 try
                 {
+                    var offset = GameMemory.ReadShort(GetIntPtr(0x82000000));
+
+                    if (offset != 23117)
+                    {
+                        RamBase = 0x100000000;
+                    }
+
                     CutsceneIDString = GameMemory.ReadStringAscii(GetIntPtr(0xC809393C), 4);
                     InLoad = GameMemory.ReadByte(GetIntPtr(0xC8093A38)) != 0;
                     InCutscene = GameMemory.ReadByte(GetIntPtr(0xC837336C)) != 0;
