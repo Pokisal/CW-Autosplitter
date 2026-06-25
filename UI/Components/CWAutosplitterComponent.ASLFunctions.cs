@@ -75,7 +75,9 @@ namespace CWAutosplitter.UI.Components
                 {
                     IntPtr tempAddr = (nint)1 << i;
                     IntPtr baseModule = (IntPtr)((nint)tempAddr + 0x82000000);
-                    if (GameMemory.ReadShort(baseModule) == 23117)
+                    int e_lfanew = GameMemory.ReadInt(baseModule + 0x3C);
+                    int pe = GameMemory.ReadInt(baseModule + e_lfanew);
+                    if (GameMemory.ReadShort(baseModule) == 23117 && pe == 17744)
                     {
                         RamBase = (long)tempAddr;
                         Utility.Log($@"Ram Base found at: 0x{RamBase:X}");
