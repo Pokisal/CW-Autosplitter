@@ -21,13 +21,12 @@ namespace CWAutosplitter.UI.Components
         private static ProcessMemory GameMemory;
         private static Process GameProcess;
 
-        public long RamBase = 0x200000000;
+        public long RamBase;
+        public bool XexStarted = false;
 
         public byte[] CutsceneID = new byte[4] { 0, 0, 0, 0 };
         public bool InLoad;
         public bool InCutscene;
-        public bool OldInLoad;
-        public bool OldInCutscene;
         public string CutsceneIDString;
         public string OldCutsceneIDString;
 
@@ -51,10 +50,6 @@ namespace CWAutosplitter.UI.Components
 
         public IntPtr GetIntPtr(long input)
         {
-            if (input >= 0xC0000000)
-            {
-                input += 0x4E000;
-            }
             return (IntPtr)(RamBase + input);
         }
 
@@ -63,6 +58,7 @@ namespace CWAutosplitter.UI.Components
             if (GameMemory != null && !GameMemory.CheckProcess())
             {
                 GameMemory = null;
+                XexStarted = false;
                 return;
             }
             if (GameMemory == null)
@@ -72,6 +68,21 @@ namespace CWAutosplitter.UI.Components
             if (!GameMemory.IsProcessStarted())
             {
                 GameMemory.StartProcess();
+            }
+            if (!XexStarted)
+            {
+                for (int i = 32; i < 47; ++i)
+                {
+                    IntPtr tempAddr = (nint)1 << i;
+                    IntPtr baseModule = (IntPtr)((nint)tempAddr + 0x82000000);
+                    if (GameMemory.ReadShort(baseModule) == 23117)
+                    {
+                        RamBase = (long)tempAddr;
+                        Utility.Log($@"Ram Base found at: 0x{RamBase:X}");
+                        XexStarted = true;
+                        break;
+                    }
+                }
             }
         }
 
@@ -93,29 +104,17 @@ namespace CWAutosplitter.UI.Components
                 InLoad = TCPFunctions.RequestMemory(0xC8093A38, 1, BitConverter.GetBytes(InLoad)).ElementAt(0) != 0;
                 InCutscene = TCPFunctions.RequestMemory(0xC837336C, 1, BitConverter.GetBytes(InCutscene)).ElementAt(0) != 0;
                 CutsceneIDString = Encoding.UTF8.GetString(CutsceneID);
+                return;
             }
-            else
+            StartProcessActions();
+            if (XexStarted && GameMemory != null)
             {
-                StartProcessActions();
-                try
-                {
-                    var offset = GameMemory.ReadShort(GetIntPtr(0x82000000));
-
-                    if (offset != 23117)
-                    {
-                        RamBase = 0x100000000;
-                    }
-
-                    CutsceneIDString = GameMemory.ReadStringAscii(GetIntPtr(0xC809393C), 4);
-                    InLoad = GameMemory.ReadByte(GetIntPtr(0xC8093A38)) != 0;
-                    InCutscene = GameMemory.ReadByte(GetIntPtr(0xC837336C)) != 0;
-                }
-                catch (NullReferenceException)
-                {
-                    return;
-                }
+                CutsceneIDString = GameMemory.ReadStringAscii(GetIntPtr(0xC809393C + 0x4E000), 4);
+                InLoad = GameMemory.ReadByte(GetIntPtr(0xC8093A38 + 0x4E000)) != 0;
+                InCutscene = GameMemory.ReadByte(GetIntPtr(0xC837336C + 0x4E000)) != 0;
             }
         }
+
 
         public bool Start()
         {
